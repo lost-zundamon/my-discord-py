@@ -1,43 +1,51 @@
 import discord
-from discord import app_commands # スラッシュコマンド用の道具
+from discord import app_commands
 from discord.ext import commands
 import random
 import os
 
-# Botの基本設定
 intents = discord.Intents.default()
-# スラッシュコマンドだけなら message_content は不要な場合もありますが、
-# 念のため ON のままにしておきます。
 intents.message_content = True
 
 class MyBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix="!", intents=intents)
 
-    # Botが起動した時に実行される特別な処理
     async def setup_hook(self):
-        # これを書くことで、Discord側に「新しいコマンドができたよ！」と同期します
         await self.tree.sync()
         print("スラッシュコマンドを同期しました！")
 
 bot = MyBot()
 
-# 占い結果
-FORTUNES = ["大吉", "中吉", "小吉", "吉", "末吉", "凶", "大凶"]
+# --- 占いのデータ設定 ---
+FORTUNES = ["超大吉", "大吉", "中吉", "小吉", "吉", "末吉", "凶", "大凶"]
+COLORS = ["赤", "青", "黄色", "緑", "ピンク", "紫", "オレンジ", "白", "黒", "水色", "金色", "銀色"]
+# ひらがな50音（濁音などは好みで追加してください）
+HIRAGANA = list("あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん")
 
 @bot.event
 async def on_ready():
     print(f'ログインしました: {bot.user.name}')
 
-# --- ここからがスラッシュコマンドの設定 ---
-@bot.tree.command(name="uranai", description="今日の運勢を占います")
+@bot.tree.command(name="uranai", description="運勢、ラッキーカラー、ラッキー文字を占います")
 async def uranai(interaction: discord.Interaction):
-    """/uranai と打つと実行される"""
-    result = random.choice(FORTUNES)
-    # スラッシュコマンドでは ctx ではなく interaction を使い、
-    # send ではなく response.send_message を使います
-    await interaction.response.send_message(f"{interaction.user.mention} さんの運勢は... **【{result}】** です！")
+    # ランダムに要素を抽出
+    fortune = random.choice(FORTUNES)
+    color = random.choice(COLORS)
+    char = random.choice(HIRAGANA)
+    
+    # メッセージの組み立て
+    response = (
+        f"{interaction.user.mention} さんの今日の運勢はこちら！\n"
+        f"------------------------------\n"
+        f"🌟 **運勢**：【{fortune}】\n"
+        f"🎨 **ラッキーカラー**：【{color}】\n"
+        f"🔤 **今日のー文字**：【{char}】\n"
+        f"------------------------------"
+    )
+    
+    await interaction.response.send_message(response)
 
-# トークンを貼り付け
-token = os.getenv("DISCORD_TOKEN")  # 環境変数からトークンを取得
+# Renderの環境変数からトークンを読み込む
+token = os.getenv('DISCORD_TOKEN')
 bot.run(token)
